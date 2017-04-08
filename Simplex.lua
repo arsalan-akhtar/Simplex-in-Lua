@@ -49,7 +49,7 @@ function Simplex(L,G,E,N,F,A)
         A[k-1][0]=k+N+G
     end
 
--- BloceA-----------------------------------------------
+-- BlocA-----------------------------------------------
     for k=(L+E+1),(M+1) do
         A[k-1][k+N-L-E]=-1
     end
@@ -124,6 +124,24 @@ function Simplex(L,G,E,N,F,A)
         end
     end
 
+-- BlocE------------------------------------------------
+    for i=1,N do
+        j=-1
+        Stop1=false
+        while ((A[j][0]==i) or Stop1) do
+            j=j+1
+            if j>W+1 then
+                Result[i]=0
+                Stop1=true
+            end
+        end
+        if (not Stop1) then
+            Result[i]=A[j][B]
+        end
+    end
+    Objective=F*A[W][B]
+
+-- BlocE------------------------------------------------
 
 
 
