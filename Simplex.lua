@@ -21,6 +21,7 @@
     Simplex(L,G,E,N,F,A)
 
 3---Error information
+    .....................
 
 4---Dependent
     Matrix Lua ???
@@ -28,6 +29,9 @@
 ]]--
 
 function Simplex(L,G,E,N,F,A)
+
+-- Initialize Variable Value----------------------------
+    Stop=false
 
 -- Initialization---------------------------------------
     for i=1,N do
@@ -108,6 +112,20 @@ function Simplex(L,G,E,N,F,A)
         end
     end
 
+-- BlocD------------------------------------------------
+    if (not Stop) then
+        i=-1
+        while (Stop or (i==M)) do
+            i=i+1
+            if ( (A[i][0]>=(N+G+L+1)) and (A[i][B]~=0) ) then
+                Stop=true
+                Error=2
+            end
+        end
+    end
+
+
+
 
 
 
@@ -118,3 +136,5 @@ function Simplex(L,G,E,N,F,A)
 
 end
 -- Fine---------------------------------------
+
+
