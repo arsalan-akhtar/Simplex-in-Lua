@@ -63,8 +63,7 @@ function Simplex(L,G,E,N,F,A)
         end
     end
 
-
--- BloceB1----------------------------------------
+-- BlocB1-----------------------------------------------
     H=H+1
     Q=9.9e37
     R=-1
@@ -77,7 +76,28 @@ function Simplex(L,G,E,N,F,A)
         end
     end
 
--- -----BloceB2----------------------------------------
+-- BlocB2-----------------------------------------------
+    P=A[R][C]
+    A[R][0]=C
+    for j=1,B do
+        A[R][j]=A[R][j]/P
+    end
+    for i=0,W do
+        if i~=R then
+            for j=1,B do
+                if j~=C then
+                    A[i][j]=A[i][j]-A[R][j]*A[i][C]
+                    if math.abs(A[i][j])<1e-9 then
+                        A[i][j]=0
+                    end
+                end
+            end
+        end
+    end
+    for i=0,W do
+        A[i][C]=0
+    end
+    A[R][C]=1
 
 
 
