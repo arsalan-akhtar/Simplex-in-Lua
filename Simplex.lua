@@ -99,6 +99,15 @@ function Simplex(L,G,E,N,F,A)
     end
     A[R][C]=1
 
+-- BlocC------------------------------------------------
+    Q=0
+    for j=1,(N+G+L) do
+        if A[W][j]<=Q then
+            Q=A[W][j]
+            C=j
+        end
+    end
+
 
 
 
