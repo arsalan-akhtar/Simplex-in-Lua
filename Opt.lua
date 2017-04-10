@@ -32,11 +32,11 @@ Opt={}
 ]]--
 
 -- Simplex Core-----------------------------------------
-function Opt.Simplex(L,G,E,N,F,A)
+function Opt.Simplex( L,G,E,N,F,A )
     -- Initialize Variable Value------------------------
     --local Error
     --local Stop
-    Result=matrix(N,1,1e9)
+    Result=matrix(N,1,9.9e37)
     --local P,Q,S,M,W,H,B,C,R
 
     Initialization()
@@ -46,44 +46,39 @@ function Opt.Simplex(L,G,E,N,F,A)
     end
     Stop=false
     Error=0
-    if ((G+E)==0) then
+    if ( (G+E)==0 ) then
         BlocC()
     end
 
-    while (not Stop) do
-        if Q==0 then
-        print('Q')
-            if (W~=(M+1)) then
+    while ( not Stop ) do
+        if ( Q==0 ) then
+            if ( W~=(M+1) ) then
                 W=W-1
             else
-                i=-1
-                while (not Stop and (i~=M)) do
-                    i=i+1
-                    if ((A[i+1][1]>=(N+G+L+1)) and (A[i+1][B+1]~=0)) then   -- Problem!!!
+                i=0
+                while ( (not Stop) and (i~=M) ) do
+                    if ( (A[i+1][1]>=(N+G+L+1) ) and (A[i+1][B+1]~=0) ) then   -- Problem!!!
                         Stop=true
                         Error=2
                     end
+                    i=i+1
                 end
-                if Error==0 then
+                if ( Error==0 ) then
                     BlocE()
-                    print('E')
                 end
                 Stop=true
             end
         else
-            print('B1')
             BlocB1()
-            if R<0 then
+            if ( R<0 ) then
                 Stop=true
                 Error=1
             else
                 BlocB2()
-                print('B2')
             end
         end
-        if (not Stop) then
+        if ( not Stop ) then
             BlocC()
-            print('C')
         end
     end
     print(Result)
@@ -107,6 +102,7 @@ function Initialization()
         A[k][N+G+k+1]=1
         A[k][1]=k+N+G
     end
+    print('Init')
 end
 
 -- BlocA------------------------------------------------
@@ -118,7 +114,7 @@ function BlocA()
     Q=0
     for j=1,(N+G) do
         S=0
-        for i=M-G-E+1,M do
+        for i=(M-G-E+1),M do
             S=S+A[i+1][j+1]
         end
         A[W+1][j+1]=-S
@@ -127,6 +123,7 @@ function BlocA()
             C=j
         end
     end
+    print('A')
 end
 
 -- BlocB1-----------------------------------------------
@@ -135,13 +132,14 @@ function BlocB1()
     Q=9.9e37
     R=-1
     for i=0,M do
-        if A[i+1][C+1]>0 then
-            if (A[i+1][B+1]/A[i+1][C+1])<=Q then
+        if ( A[i+1][C+1]>0 ) then
+            if ( (A[i+1][B+1]/A[i+1][C+1])<=Q ) then
                 Q=A[i+1][B+1]/A[i+1][C+1]
                 R=i
             end
         end
     end
+    print('B1')
 end
 
 -- BlocB2-----------------------------------------------
@@ -152,11 +150,11 @@ function BlocB2()
         A[R+1][j+1]=A[R+1][j+1]/P
     end
     for i=0,W do
-        if i~=R then
+        if ( i~=R ) then
             for j=1,B do
-                if j~=C then
+                if ( j~=C ) then
                     A[i+1][j+1]=A[i+1][j+1]-A[R+1][j+1]*A[i+1][C+1]
-                    if math.abs(A[i+1][j+1])<1e-9 then
+                    if ( math.abs(A[i+1][j+1])<1e-9 ) then
                         A[i+1][j+1]=0
                     end
                 end
@@ -167,24 +165,27 @@ function BlocB2()
         A[i+1][C+1]=0
     end
     A[R+1][C+1]=1
+
+    print('B2')
 end
 
 -- BlocC------------------------------------------------
 function BlocC()
     Q=0
     for j=1,(N+G+L) do
-        if A[W+1][j+1]<=Q then
+        if ( A[W+1][j+1]<=Q ) then
             Q=A[W+1][j+1]
             C=j
         end
     end
+    print('C')
 end
 
 -- BlocD------------------------------------------------
 function BlocD()
-    if (not Stop) then
+    if ( not Stop ) then
         i=0
-        while (not Stop and (i~=M)) do
+        while ( (not Stop) and (i~=M) ) do
             if ( (A[i+1][1]>=(N+G+L+1)) and (A[i+1][B+1]~=0) ) then
                 Stop=true
                 Error=2
@@ -192,6 +193,7 @@ function BlocD()
             i=i+1
         end
     end
+    print('D')
 end
 
 -- BlocE------------------------------------------------
@@ -199,18 +201,19 @@ function BlocE()
     for i=1,N do
         j=0
         Stop1=false
-        while ((A[j+1][1]~=i) and not Stop1) do
-            if j>W+1 then
+        while ( (A[j+1][1]~=i) and (not Stop1) ) do
+            if ( j>W+1 ) then
                 Result[i][1]=0
                 Stop1=true
             end
             j=j+1
         end
-        if (not Stop1) then
+        if ( not Stop1 ) then
             Result[i][1]=A[j+1][B+1]
         end
     end
     Objective=F*A[W+1][B+1]
+    print('E')
 end
 
 -- Fine-------------------------------------------------
