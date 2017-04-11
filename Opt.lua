@@ -81,8 +81,17 @@ function Opt.Simplex( L,G,E,N,F,A )
             BlocC()
         end
     end
-    print(Result)
-    print(Objective)
+
+    if (Error==0) then
+        print('Results are:')
+        print(Result)
+        print(Objective)
+    elseif (Error==1) then
+        print('No definite solution!')
+    elseif (Error==2) then
+        print('No feasable solution!')
+    end
+
 
 end
 
