@@ -56,8 +56,8 @@ function Opt.Simplex( L,G,E,N,F,A )
                 W=W-1
             else
                 i=0
-                while ( (not Stop) and (i~=M) ) do
-                    if ( (A[i+1][1]>=(N+G+L+1) ) and (A[i+1][B+1]~=0) ) then   -- Problem!!!
+                while ( (not Stop) and (i~=(M+1)) ) do
+                    if ( (A[i+1][1]>=(N+G+L+1)) and (A[i+1][B+1]~=0) ) then
                         Stop=true
                         Error=2
                     end
@@ -87,11 +87,12 @@ function Opt.Simplex( L,G,E,N,F,A )
         print(Result)
         print(Objective)
     elseif (Error==1) then
-        print('No definite solution!')
+        print('Error1: No definite solution!')
     elseif (Error==2) then
-        print('No feasable solution!')
+        print('Error2: No feasable solution!')
     end
 
+    print(A)
 
 end
 
@@ -109,8 +110,9 @@ function Initialization()
     H=1
     for k=1,(M+1) do
         A[k][N+G+k+1]=1
-        A[k][1]=k+N+G
+        A[k][1]=k+N+G+1
     end
+    print(A)
     print('Init')
 end
 
@@ -132,6 +134,7 @@ function BlocA()
             C=j
         end
     end
+    print(A)
     print('A')
 end
 
@@ -190,11 +193,11 @@ function BlocC()
     print('C')
 end
 
--- BlocD------------------------------------------------
+-- BlocD-----not used ???-------------------------------
 function BlocD()
     if ( not Stop ) then
         i=0
-        while ( (not Stop) and (i~=M) ) do
+        while ( (not Stop) and (i~=(M+1)) ) do
             if ( (A[i+1][1]>=(N+G+L+1)) and (A[i+1][B+1]~=0) ) then
                 Stop=true
                 Error=2
