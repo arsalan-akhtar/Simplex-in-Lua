@@ -31,52 +31,73 @@ Opt={}
 
 ]]--
 
--- Simplex Core-----------------------------------------
+-- Simplex calculation processes------------------------
 function Opt.Simplex( L,G,E,N,F,A )
-    -- Initialize Variable Value------------------------
-    --local Error
-    --local Stop
-    Result=matrix(N,1,9.9e37)
-    --local P,Q,S,M,W,H,B,C,R
+    --  Initialize Variable Value
+    --  give all variables zero value
+    --  because if they are not changing to base, they should be zero
+    Result=matrix(N,1,0)
 
+    --  Initialization, add artificial variables, for each kind of constraints
     Initialization()
 
-    if ( (E~=0) or (G~=0 and E==0) ) then
+    --  add artifical variables for "=" & ">=" constraints
+    if ( (E~=0) or (G~=0) ) then
         BlocA()
     end
     Stop=false
     Error=0
+
+    --  if no =,>= constraints, go to BlocC directly
     if ( (G+E)==0 ) then
         BlocC()
     end
 
     while ( not Stop ) do
+        --  "Q" is the value corresponding to the change in variable
+        --  if Q==0, means no more change in, optimization will be stoped
         if ( Q==0 ) then
+            --  "W" is the row number of objective, or the last row
+            --  this is to change out all artifical variables for "=" & ">="
+            --  then solve the optimization problem
             if ( W~=(M+1) ) then
+                --  "W+1" in "BlocA", so here minus
                 W=W-1
             else
-                i=0
-                while ( (not Stop) and (i~=(M+1)) ) do
-                    if ( (A[i+1][1]>=(N+G+L+1)) and (A[i+1][B+1]~=0) ) then
+                --  this is to know if there exist solutions
+                --  it is actually "BlocD", and "BlocD" is not used...
+                i=1
+                while ( (not Stop) and (i<=(M+1)) ) do
+                    --  "N+G+L+2" is the begining of artifical variable for equation constraint
+                    --  because equation constraint must be satisfied, so it should be changed out
+                    --  if "A[i][B]~=0", means it is not changed out
+                    --  can't find solution satisfy equation constraint
+                    if ( (A[i][1]>=(N+G+L+2)) and (A[i][B]~=0) ) then
+                        print(B)
                         Stop=true
                         Error=2
                     end
                     i=i+1
                 end
+                --  if exist solutions, save them
                 if ( Error==0 ) then
                     BlocE()
                 end
                 Stop=true
             end
-        else
+        else    --  still could optimizing...
             BlocB1()
+            -- initially R=-1. if R<0, means no change out variable
+            --  this has no definite solutions
             if ( R<0 ) then
                 Stop=true
                 Error=1
             else
                 BlocB2()
+                print(A)
             end
         end
+        --  if not stop, continue to find change in variable
         if ( not Stop ) then
             BlocC()
         end
@@ -92,61 +113,88 @@ function Opt.Simplex( L,G,E,N,F,A )
         print('Error2: No feasable solution!')
     end
 
-    print(A)
-
 end
 
 -- Initialization---------------------------------------
 function Initialization()
-    for i=1,N do
-        A[L+E+G+1][i+1]=-F*A[L+E+G+1][i+1]
+    --  last row of "A" is objective
+    --  in the form:
+    --  z-a1*x1-a2*x2....=0
+    for i=2,(N+1) do    --  variable starts from second column
+        A[L+E+G+1][i]=-F*A[L+E+G+1][i]
     end
     Error=0
-    C=1
+    
+    -- column number of change in variable
+    C=2
+    --  number of all constraints
     M=L+G+E
-    B=M+N+G+1
-    W=M
-    M=M-1
+    --  column number of constant value part of constraints
+    --  Ax=B
+    --  1+N+G+L+E+G+1
+    B=M+N+G+2
+    --  row number of objective
+    --  also the last row of matrix "A"
+    --  because "W+1" in "BlocA"
+    W=M+1
+    --  because in pascal, matrix starts from zero row
+    --  M=M-1
+    
+    --  ??? H ???
     H=1
-    for k=1,(M+1) do
+
+    for k=1,M do
+        --  add artifical variables for all constraints
+        --  N+G+k+1:    1 jump the first column
+        --              N jump the variables
+        --              G jump the >= constraints, to save place for other variables
+        --              k is for each constraints, <=,=,>=
         A[k][N+G+k+1]=1
-        A[k][1]=k+N+G+1
+        --  the numbering of initial base column
+        A[k][1]=N+G+k+1
     end
     print(A)
     print('Init')
 end
 
--- BlocA------------------------------------------------
+-- BlocA: artifical variables for "=" & >="-------------
 function BlocA()
-    for k=(L+E+1),(M+1) do
-        A[k][k-L-E+N+1]=-1
+    -- add variables for ">=" constraints
+    for k=(L+E+1),M do
+        A[k][k-L-E+N]=-1
     end
+    --  here, "W" is the last row
     W=W+1
     Q=0
-    for j=1,(N+G) do
+    for j=2,(N+G+1) do
         S=0
         for i=(M-G-E+1),M do
-            S=S+A[i+1][j+1]
+            S=S+A[i][j]
         end
-        A[W+1][j+1]=-S
-        if A[W+1][j+1]<=Q then
-            Q=A[W+1][j+1]
+        A[W][j]=-S
+        if A[W][j]<=Q then
+            Q=A[W][j]
             C=j
         end
     end
-    print(A)
     print('A')
 end
 
--- BlocB1-----------------------------------------------
+-- BlocB1: determine the change out variable------------
 function BlocB1()
     H=H+1
+    --  using "Q"
     Q=9.9e37
+    --  "R" indicate the row number of change out
+    --  give it an impossible value "-1" initially
     R=-1
-    for i=0,M do
-        if ( A[i+1][C+1]>0 ) then
-            if ( (A[i+1][B+1]/A[i+1][C+1])<=Q ) then
-                Q=A[i+1][B+1]/A[i+1][C+1]
+    for i=1,M do
+        --  "C" is the column number of change in variable
+        --  it has been decided in "BlocC"
+        if ( A[i][C]>0 ) then
+            if ( (A[i][B]/A[i][C])<=Q ) then
+                Q=A[i][B]/A[i][C]
+                --  A[R][C] is used. this can be found in "BlocB2"
                 R=i
             end
         end
@@ -156,49 +204,56 @@ end
 
 -- BlocB2-----------------------------------------------
 function BlocB2()
-    P=A[R+1][C+1]
-    A[R+1][1]=C
-    for j=1,B do
-        A[R+1][j+1]=A[R+1][j+1]/P
+    P=A[R][C]
+    --  the first column is the number of base vectors
+    --  this is to change base to new one
+    A[R][1]=C
+    
+    for j=2,B do
+        A[R][j]=A[R][j]/P
     end
-    for i=0,W do
+
+    for i=1,W do
         if ( i~=R ) then
-            for j=1,B do
+            for j=2,B do
                 if ( j~=C ) then
-                    A[i+1][j+1]=A[i+1][j+1]-A[R+1][j+1]*A[i+1][C+1]
-                    if ( math.abs(A[i+1][j+1])<1e-9 ) then
-                        A[i+1][j+1]=0
+                    A[i][j]=A[i][j]-A[R][j]*A[i][C]
+                    if ( math.abs(A[i][j])<1e-9 ) then
+                        A[i][j]=0
                     end
                 end
             end
         end
     end
-    for i=0,W do
-        A[i+1][C+1]=0
+    --  this is to set the new base vector
+    for i=1,W do
+        A[i][C]=0
     end
-    A[R+1][C+1]=1
+    A[R][C]=1
 
     print('B2')
 end
 
--- BlocC------------------------------------------------
+-- BlocC: determine the change in variable--------------
 function BlocC()
     Q=0
-    for j=1,(N+G+L) do
-        if ( A[W+1][j+1]<=Q ) then
-            Q=A[W+1][j+1]
+    for j=2,(1+N+L+G) do
+        -- because "-F", finding smallest "Q" means finding the biggest coefficient
+        if ( A[W][j]<=Q ) then
+            Q=A[W][j]
+            --  corresponding column number of change in variable
             C=j
         end
     end
     print('C')
 end
 
--- BlocD-----not used ???-------------------------------
+-- BlocD: not used -------------------------------------
 function BlocD()
     if ( not Stop ) then
-        i=0
-        while ( (not Stop) and (i~=(M+1)) ) do
-            if ( (A[i+1][1]>=(N+G+L+1)) and (A[i+1][B+1]~=0) ) then
+        i=1
+        while ( (not Stop) and (i<=(M+1)) ) do
+            if ( (A[i][1]>=(N+G+L+1)) and (A[i][B]~=0) ) then
                 Stop=true
                 Error=2
             end
@@ -208,23 +263,26 @@ function BlocD()
     print('D')
 end
 
--- BlocE------------------------------------------------
+-- BlocE: find the results and outputs------------------
 function BlocE()
     for i=1,N do
-        j=0
+        j=1
         Stop1=false
-        while ( (A[j+1][1]~=i) and (not Stop1) ) do
-            if ( j>W+1 ) then
+        --  "~=i+1" this is because the numbering of variable should +1 in matrix A
+        --  the loop will be finish if find the variable
+        --  the row number is saved in "j"
+        while ( (A[j][1]~=i+1) and (not Stop1) ) do
+            if ( j>W ) then
                 Result[i][1]=0
                 Stop1=true
             end
             j=j+1
         end
         if ( not Stop1 ) then
-            Result[i][1]=A[j+1][B+1]
+            Result[i][1]=A[j][B]
         end
     end
-    Objective=F*A[W+1][B+1]
+    Objective=F*A[W][B]
     print('E')
 end
 
