@@ -1,38 +1,34 @@
--- Optimization Package--------------------------------
--- Currently, only have simplex------------------------
-Opt={}
+-- Optimization Package---------------------------------
+--[[ Currently, only have simplex
+     Maybe will be improved with other methods
+--------------------------------------------------- ]]--
+Optimize={}
 
+--------------------1 For Simplex-----------------------
+--[[ ---------------------------------------------------
+    1>Type of variables:
+        L:number of constraints"<="
+        E:....................."="
+        G:.....................">="
+        N:.......... variables
+        F: = 1, if maximize
+           =-1, if minimize
+        A:coefficient matrix of the simples
+          matrix is arranged in the following sequance:
+          1. <=
+          2. =
+          3. >=
+          4. objective
 
--- 1 For Simplex---------------------------------------
---[[
-1---Type of variables:
-    L:number of constraints"<="
-    E:....................."="
-    G:.....................">="
-    N:.......... variables
-    F: = 1, if maximize
-       =-1, if minimize
-    A:coefficient matrix of the simples
-      matrix is arranged in the following sequance:
-      1. <=
-      2. =
-      3. >=
-      4. objective
-    Remark: initialize matrix A ???
+    2>How to use it
+        Simplex(L,G,E,N,F,A)
 
-2---How to use it
-    Simplex(L,G,E,N,F,A)
-
-3---Error information
-    .....................
-
-4---Dependent
-    Matrix Lua ???
-
-]]--
+    3>Dependent
+        Matrix in Lua
+--------------------------------------------------- ]]--
 
 -- Simplex calculation processes------------------------
-function Opt.Simplex( L,G,E,N,F,A )
+function Optimize.Simplex( L,G,E,N,F,A )
     --  Initialize Variable Value
     --  give all variables zero value
     --  because if they are not changing to base, they should be zero
@@ -41,7 +37,7 @@ function Opt.Simplex( L,G,E,N,F,A )
     --  Initialization, add artificial variables, for each kind of constraints
     Initialization()
 
-    --  add artifical variables for "=" & ">=" constraints
+    --  add additional artifical variables for "=" & ">=" constraints
     if ( (E~=0) or (G~=0) ) then
         BlocA()
     end
@@ -73,28 +69,26 @@ function Opt.Simplex( L,G,E,N,F,A )
                     --  if "A[i][B]~=0", means it is not changed out
                     --  can't find solution satisfy equation constraint
                     if ( (A[i][1]>=(N+G+L+2)) and (A[i][B]~=0) ) then
-                        print(B)
                         Stop=true
                         Error=2
                     end
                     i=i+1
                 end
-                --  if exist solutions, save them
+                --  if exist solutions, save them and out put
                 if ( Error==0 ) then
                     BlocE()
                 end
                 Stop=true
             end
-        else    --  still could optimizing...
+        else    --  problem still could be optimized
             BlocB1()
-            -- initially R=-1. if R<0, means no change out variable
-            --  this has no definite solutions
+            --  initially R=-1. if R<0, means no change out variable
+            --  there is no definite solutions
             if ( R<0 ) then
                 Stop=true
                 Error=1
             else
                 BlocB2()
-                print(A)
             end
         end
         --  if not stop, continue to find change in variable
@@ -103,6 +97,7 @@ function Opt.Simplex( L,G,E,N,F,A )
         end
     end
 
+    --  print results or error information
     if (Error==0) then
         print('Results are:')
         print(Result)
@@ -115,7 +110,7 @@ function Opt.Simplex( L,G,E,N,F,A )
 
 end
 
--- Initialization---------------------------------------
+-- Initialization: add artificial variables-------------
 function Initialization()
     --  last row of "A" is objective
     --  in the form:
@@ -141,6 +136,7 @@ function Initialization()
     --  M=M-1
     
     --  ??? H ???
+    --  maybe mark a number of optimization loops
     H=1
 
     for k=1,M do
@@ -153,13 +149,11 @@ function Initialization()
         --  the numbering of initial base column
         A[k][1]=N+G+k+1
     end
-    print(A)
-    print('Init')
 end
 
 -- BlocA: artifical variables for "=" & >="-------------
 function BlocA()
-    -- add variables for ">=" constraints
+    --  add variables for ">=" constraints
     for k=(L+E+1),M do
         A[k][k-L-E+N]=-1
     end
@@ -177,7 +171,6 @@ function BlocA()
             C=j
         end
     end
-    print('A')
 end
 
 -- BlocB1: determine the change out variable------------
@@ -199,20 +192,18 @@ function BlocB1()
             end
         end
     end
-    print('B1')
 end
 
--- BlocB2-----------------------------------------------
+-- BlocB2: rotation operations to change base variables
+--         one step of optimization is done-------------
 function BlocB2()
     P=A[R][C]
     --  the first column is the number of base vectors
     --  this is to change base to new one
     A[R][1]=C
-    
     for j=2,B do
         A[R][j]=A[R][j]/P
     end
-
     for i=1,W do
         if ( i~=R ) then
             for j=2,B do
@@ -230,22 +221,19 @@ function BlocB2()
         A[i][C]=0
     end
     A[R][C]=1
-
-    print('B2')
 end
 
 -- BlocC: determine the change in variable--------------
 function BlocC()
     Q=0
     for j=2,(1+N+L+G) do
-        -- because "-F", finding smallest "Q" means finding the biggest coefficient
+        --  because "-F", finding smallest "Q" means finding the biggest coefficient
         if ( A[W][j]<=Q ) then
             Q=A[W][j]
             --  corresponding column number of change in variable
             C=j
         end
     end
-    print('C')
 end
 
 -- BlocD: not used -------------------------------------
@@ -260,7 +248,6 @@ function BlocD()
             i=i+1
         end
     end
-    print('D')
 end
 
 -- BlocE: find the results and outputs------------------
@@ -283,10 +270,9 @@ function BlocE()
         end
     end
     Objective=F*A[W][B]
-    print('E')
 end
 
 -- Fine-------------------------------------------------
-return Opt
+return Optimize
 
 -- -----------------------------------------------------
