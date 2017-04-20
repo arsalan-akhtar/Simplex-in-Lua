@@ -1,4 +1,4 @@
--- test lua caliper-------------------------
+-- test for caliper-------------------------
 --[[ using the two outer measuring faces of
      caliper at first.                  ]]--
 
@@ -6,8 +6,9 @@
 package.path = package.path .. ';' .. unprojectizeFilename(Caliper_Path.localPath) .. '/?.lua'
 
 -- load packages----------------------------
-matrix = require "matrix"
 metrology = require "metrology"
+matrix = require "matrix"
+Optimize=require "Optimize"
 
 -- criteria to stop association-------------
 local CRT=1
@@ -44,7 +45,7 @@ end
 
 -- loop to associate------------------------
 --while (CRT>1e-3) do
-while (loop_num<3) do
+--while (loop_num<3) do
 	--print(PTS)
 	
 	local PTS=matrix(num_r*num_c,3,0)
@@ -169,7 +170,7 @@ while (loop_num<3) do
 	
 	loop_num=loop_num+1
 	
-end
+--end
 -- finish-----------------------------------
 
 

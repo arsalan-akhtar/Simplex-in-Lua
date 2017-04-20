@@ -108,6 +108,9 @@ function Optimize.Simplex( L,G,E,N,F,A )
         print('Error2: No feasable solution!')
     end
 
+    --  output calculation results
+    return Result, Objective
+
 end
 
 -- Initialization: add artificial variables-------------
