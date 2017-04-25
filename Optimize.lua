@@ -29,27 +29,32 @@ Optimize={}
 
 -- Simplex calculation processes------------------------
 function Optimize.Simplex( L,G,E,N,F,A )
+
     --  Initialize Variable Value
     --  give all variables zero value
     --  because if they are not changing to base, they should be zero
-    Result=matrix(N,1,0)
-
+    local Result=matrix( N,1,0 )
+    
     --  Initialization, add artificial variables, for each kind of constraints
-    Initialization()
+    local A,Error,C,M,B,W=Initialization( L,G,E,N,F,A )
+    local Q=0
+    local Objective=0
+    local R=-1
 
     --  add additional artifical variables for "=" & ">=" constraints
     if ( (E~=0) or (G~=0) ) then
-        BlocA()
+        C,Q,A,W=BlocA( L,G,E,N,A,M,W )
     end
-    Stop=false
+    local Stop=false
     Error=0
 
     --  if no =,>= constraints, go to BlocC directly
     if ( (G+E)==0 ) then
-        BlocC()
+        C,Q,A=BlocC( L,G,N,A,C,W )
     end
 
     while ( not Stop ) do
+
         --  "Q" is the value corresponding to the change in variable
         --  if Q==0, means no more change in, optimization will be stoped
         if ( Q==0 ) then
@@ -76,32 +81,32 @@ function Optimize.Simplex( L,G,E,N,F,A )
                 end
                 --  if exist solutions, save them and out put
                 if ( Error==0 ) then
-                    BlocE()
+                    Result,Objective=BlocE( N,F,A,B,W,Result )
                 end
                 Stop=true
             end
         else    --  problem still could be optimized
-            BlocB1()
+            Q,R=BlocB1( Q,A,C,M,B )
             --  initially R=-1. if R<0, means no change out variable
             --  there is no definite solutions
             if ( R<0 ) then
                 Stop=true
                 Error=1
             else
-                BlocB2()
+                A=BlocB2( A,C,B,W,R )
             end
         end
         --  if not stop, continue to find change in variable
         if ( not Stop ) then
-            BlocC()
+            C,Q,A=BlocC( L,G,N,A,C,W )
         end
     end
 
     --  print results or error information
     if (Error==0) then
-        print('Results are:')
-        print(Result)
-        print(Objective)
+        --print('Results are:')
+        --print(Result)
+        --print(Objective)
     elseif (Error==1) then
         print('Error1: No definite solution!')
     elseif (Error==2) then
@@ -114,33 +119,33 @@ function Optimize.Simplex( L,G,E,N,F,A )
 end
 
 -- Initialization: add artificial variables-------------
-function Initialization()
+function Initialization( L,G,E,N,F,A )
     --  last row of "A" is objective
     --  in the form:
     --  z-a1*x1-a2*x2....=0
     for i=2,(N+1) do    --  variable starts from second column
         A[L+E+G+1][i]=-F*A[L+E+G+1][i]
     end
-    Error=0
+    local Error=0
     
     -- column number of change in variable
-    C=2
+    local C=2
     --  number of all constraints
-    M=L+G+E
+    local M=L+G+E
     --  column number of constant value part of constraints
     --  Ax=B
     --  1+N+G+L+E+G+1
-    B=M+N+G+2
+    local B=M+N+G+2
     --  row number of objective
     --  also the last row of matrix "A"
     --  because "W+1" in "BlocA"
-    W=M+1
+    local W=M+1
     --  because in pascal, matrix starts from zero row
     --  M=M-1
     
     --  ??? H ???
     --  maybe mark a number of optimization loops
-    H=1
+    --H=1
 
     for k=1,M do
         --  add artifical variables for all constraints
@@ -152,19 +157,22 @@ function Initialization()
         --  the numbering of initial base column
         A[k][1]=N+G+k+1
     end
+
+    return A,Error,C,M,B,W
+
 end
 
 -- BlocA: artifical variables for "=" & >="-------------
-function BlocA()
+function BlocA( L,G,E,N,A,M,W )
     --  add variables for ">=" constraints
     for k=(L+E+1),M do
         A[k][k-L-E+N]=-1
     end
     --  here, "W" is the last row
     W=W+1
-    Q=0
+    local Q=0
     for j=2,(N+G+1) do
-        S=0
+        local S=0
         for i=(M-G-E+1),M do
             S=S+A[i][j]
         end
@@ -174,16 +182,19 @@ function BlocA()
             C=j
         end
     end
+
+    return C,Q,A,W
+
 end
 
 -- BlocB1: determine the change out variable------------
-function BlocB1()
-    H=H+1
+function BlocB1( Q,A,C,M,B )
+    -- H=H+1
     --  using "Q"
     Q=9.9e37
     --  "R" indicate the row number of change out
     --  give it an impossible value "-1" initially
-    R=-1
+    local R=-1
     for i=1,M do
         --  "C" is the column number of change in variable
         --  it has been decided in "BlocC"
@@ -195,12 +206,15 @@ function BlocB1()
             end
         end
     end
+
+    return Q,R
+
 end
 
 -- BlocB2: rotation operations to change base variables
 --         one step of optimization is done-------------
-function BlocB2()
-    P=A[R][C]
+function BlocB2( A,C,B,W,R )
+    local P=A[R][C]
     --  the first column is the number of base vectors
     --  this is to change base to new one
     A[R][1]=C
@@ -224,11 +238,14 @@ function BlocB2()
         A[i][C]=0
     end
     A[R][C]=1
+
+    return A
+
 end
 
 -- BlocC: determine the change in variable--------------
-function BlocC()
-    Q=0
+function BlocC( L,G,N,A,C,W )
+    local Q=0
     for j=2,(1+N+L+G) do
         --  because "-F", finding smallest "Q" means finding the biggest coefficient
         if ( A[W][j]<=Q ) then
@@ -237,6 +254,9 @@ function BlocC()
             C=j
         end
     end
+
+    return C,Q,A
+
 end
 
 -- BlocD: not used -------------------------------------
@@ -254,15 +274,15 @@ function BlocD()
 end
 
 -- BlocE: find the results and outputs------------------
-function BlocE()
+function BlocE( N,F,A,B,W,Result )
     for i=1,N do
         j=1
-        Stop1=false
+        local Stop1=false
         --  "~=i+1" this is because the numbering of variable should +1 in matrix A
         --  the loop will be finish if find the variable
         --  the row number is saved in "j"
         while ( (A[j][1]~=i+1) and (not Stop1) ) do
-            if ( j>W ) then
+            if ( j>=W ) then    -- use ">=" to avoid index of nil
                 Result[i][1]=0
                 Stop1=true
             end
@@ -272,7 +292,10 @@ function BlocE()
             Result[i][1]=A[j][B]
         end
     end
-    Objective=F*A[W][B]
+    local Objective=F*A[W][B]
+
+    return Result,Objective
+
 end
 
 -- Fine-------------------------------------------------
